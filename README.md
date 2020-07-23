@@ -1,4 +1,4 @@
-# server
+# Vue Apollo Example CRUD
 
 ## Project setup
 ```
