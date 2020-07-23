@@ -1,0 +1,7 @@
+#import "./PostFragment.gql"
+
+subscription postsAdded {
+  postsAdded {
+    ...Post
+  }
+}

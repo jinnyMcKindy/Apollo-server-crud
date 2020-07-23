@@ -1,0 +1,50 @@
+"Included scalars"
+scalar JSON
+scalar Upload
+
+"It will increment!"
+type Counter {
+  "Number of increments"
+  count: Int!
+  "Full message for testing"
+  countStr: String
+}
+
+"A text post send by users"
+type Post {
+  id: ID!
+  "Post content"
+  title: String!
+  body: String!
+}
+
+"Input from user to create a post"
+input PostInput {
+  "Message content"
+  title: String!
+  body: String!
+}
+
+type Query {
+  "List of posts sent by users"
+  posts: [Post]
+  getPost (id: ID!): Post
+}
+type deletedPost {
+  deletedPost: Boolean
+}
+type Mutation {
+  myMutation: String!
+  "Add a message and publish it on 'messages' subscription channel"
+  addPost (input: PostInput!): Post!
+  deletePost (id: ID!): deletedPost
+}
+
+type Subscription {
+  mySub: String!
+  "This will update every 2 seconds"
+  counter: Counter!
+  "When a new post is added"
+  postsAdded: Post!
+
+}
