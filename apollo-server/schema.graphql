@@ -25,14 +25,24 @@ input PostInput {
   body: String!
 }
 
+"Pagination value"
+input PageQueryOptions {
+  limit: Int!
+  page: Int!
+}
+
 type Query {
   "List of posts sent by users"
-  posts: [Post]
+  posts (options: PageQueryOptions): [Post]
+  "Get post by ID"
   getPost (id: ID!): Post
 }
+
 type deletedPost {
+  "If the post was deleted"
   deletedPost: Boolean
 }
+
 type Mutation {
   myMutation: String!
   "Add a message and publish it on 'messages' subscription channel"
@@ -41,10 +51,8 @@ type Mutation {
 }
 
 type Subscription {
-  mySub: String!
-  "This will update every 2 seconds"
-  counter: Counter!
-  "When a new post is added"
+  "When the new post was added"
   postsAdded: Post!
-
+  "When a new post was deleted"
+  deleted (id: ID!): ID!
 }

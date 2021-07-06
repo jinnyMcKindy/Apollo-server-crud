@@ -5,15 +5,19 @@ import shortid from 'shortid'
 export default {
   JSON: GraphQLJSON,
 
-  Counter: {
-    countStr: counter => `Current count: ${counter.count}`,
-  },
-
   Query: {
-    posts: (root, args, { db }) => db.get('posts').slice(offset, last_offset).value(),
+    posts: (root, { options: { page, limit} }, { db }) => { 
+      const len =  db.get('posts').value().length;
+      let previousOffset = 0;
+      let nextOffset = len;
+      if(len >= limit) {
+        previousOffset = (page - 1) * limit;
+        nextOffset = page * limit;
+      } 
+      return db.get('posts').value().slice(previousOffset, nextOffset);
+    },
     getPost: (root, { id }, { db }) => db.get('posts').find({ id }).value(),
   },
-
   Mutation: {
     addPost: (root, { input }, { pubsub, db }) => {
       const post = {
@@ -30,7 +34,7 @@ export default {
       return post
     },
     deletePost: (root, { id }, { pubsub, db }) => {
-      pubsub.publish('posts', { postsAdded: null })
+      pubsub.publish('posts', { deleted: null })
       db
         .get('posts')
         .remove({ id })
@@ -40,26 +44,11 @@ export default {
   },
 
   Subscription: {
-    mySub: {
-      subscribe: (parent, args, { pubsub }) => pubsub.asyncIterator('hey'),
-    },
-    counter: {
-      subscribe: (parent, args, { pubsub }) => {
-        const channel = Math.random().toString(36).substring(2, 15) // random channel name
-        let count = 0
-        setInterval(() => pubsub.publish(
-          channel,
-          {
-            // eslint-disable-next-line no-plusplus
-            counter: { count: count++ },
-          }
-        ), 2000)
-        return pubsub.asyncIterator(channel)
-      },
-    },
-
-    postsAdded: {
+    deleted: {
       subscribe: (parent, args, { pubsub }) => pubsub.asyncIterator('posts'),
+    },
+    postsAdded: {
+      subscribe: () => pubsub.asyncIterator(['POST_ADDED']),
     },
   },
 }

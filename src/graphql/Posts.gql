@@ -1,7 +1,7 @@
 #import "./PostFragment.gql"
 
-query posts {
-  posts {
-    ...Post
+query ($options: PageQueryOptions) {
+  posts(options: $options) {
+   ...Post
   }
 }

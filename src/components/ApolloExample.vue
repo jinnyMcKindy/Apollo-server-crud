@@ -5,7 +5,7 @@
           v-for="page in 11" 
           :key="page"
           @click="changePage(page)">
-          {{page}}
+          {{ page }}
       </span>
     </div>
     <ApolloMutation
@@ -17,10 +17,9 @@
         },
       }"
       class="form"
-      @done="newMessage = ''"
+      @done="newMessage = 'Done'"
     >
       <template slot-scope="{ mutate }">
-        <span class="red" v-if="!formValid">Fill the form</span>
         <form @submit="formValid && mutate()">
           <label for="field-message">Title</label>
           <input
@@ -38,30 +37,28 @@
             class="input"
             required
           >
-          <div><button class="btn" type="submit">Add post</button></div>
+          <div>
+            <button class="btn" type="submit">Add post</button>
+          </div>
         </form>
       </template>
     </ApolloMutation>
     <ApolloQuery 
-      :query="ALL_POSTS">
-            <ApolloSubscribeToMore
-              :document="require('../graphql/PostsAdded.gql')"
-              :update-query="onPostsAdded"
-            />
-            <div slot-scope="{ result: { loading, error, data } }">
-            <template>
-            <div v-if="loading" class="loading apollo">Loading...</div>
-            <div v-else-if="error" class="error apollo">An error occurred</div>
-            <div v-else-if="data" class="result apollo">
-                <div class="post" v-for="post in data.posts" :key="post.id">
-                      <h4>{{post.title}}  <i @click="deletePost(post.id)" class="fa fa-trash red" aria-hidden="true"></i></h4>
-                      <p>{{post.body}}</p>                 
-                </div>
+        :query="ALL_POSTS" 
+        :variables="{ options }">
+        <template v-slot="{ result: { loading, error, data } }">
+        <div v-if="loading" class="loading apollo">Loading...</div>
+        <div v-else-if="error" class="error apollo">An error occurred {{error}}</div>
+        <div v-else-if="data" class="result apollo">
+            <div v-for="post in data.posts" :key="post.id" class="border">
+                <h4>{{post.title}}</h4>
+                <p>{{post.body}}</p>
+                <button @click="deletePost(post.id)" class="red"> Delete </button>
             </div>
-            <div v-else class="no-result apollo">No result :(</div>
-            </template>
-            </div>
-        </ApolloQuery>
+        </div>
+        <div v-else class="no-result apollo">No result :(</div>
+        </template>
+    </ApolloQuery>
   </div>
 </template>
 
@@ -73,7 +70,16 @@ export default {
     return {
       title: '',
       body: '',
-      ALL_POSTS: require('../graphql/Posts.gql')
+      ALL_POSTS: require('../graphql/Posts.gql'),
+      postID: 1,
+      input: {
+          title: "A Very Captivating Post Title",
+          body: "Some interesting content."
+      },
+      options: {
+        page: 1,
+        limit: 3
+      }
     }
   },
 
@@ -84,22 +90,6 @@ export default {
   },
 
   methods: {
-    onMessageAdded (previousResult, { subscriptionData }) {
-      return {
-        messages: [
-          ...previousResult.messages,
-          subscriptionData.data.messageAdded,
-        ],
-      }
-    },
-    onPostsAdded (previousResult, { subscriptionData }) {
-      return {
-        posts: [
-          ...previousResult.posts,
-          subscriptionData.data.postsAdded,
-        ],
-      }
-    },
     deletePost(id) {
       this.$apollo.mutate({
         mutation: DELETE_POST,
@@ -107,21 +97,17 @@ export default {
           id
         },
         update: store => {
-          const data = store.readQuery({ query: this.ALL_POSTS })
-          const posts = data.posts;
-          const deletedPost = posts.find((post) => post.id === id);
-          const index = posts.indexOf(deletedPost);
-          posts.splice(index, 1);
-          data.posts = posts;
+          const options = this.options;
+          let data = store.readQuery({ query: this.ALL_POSTS, variables: { options } });
+          data.posts = data.posts.filter(post => post.id != id);
           store.writeQuery({ query: this.ALL_POSTS, data })
         }
       }) 
     },
     changePage(page) {
       const opt = { ...this.options }
-      opt.paginate.page = page;
+      opt.page = page;
       this.options = opt;
-      this.$apollo.queries.posts.refetch();
     },
   },
 }
@@ -186,5 +172,10 @@ label {
 }
 .post h4 {
   text-align: center;
+}
+.border {
+  border: 1px solid black;
+  margin-bottom: 10px;
+  padding: 10px;
 }
 </style>
